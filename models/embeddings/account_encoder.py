@@ -42,7 +42,7 @@ def expmap(base: torch.Tensor, vec: torch.Tensor) -> torch.Tensor:
     return coef1 * base + coef2 * v
 
 
-def lorentz_logmap(base: torch.Tensor, point: torch.Tensor) -> torch.Tensor:
+def lorentz_log_map(base: torch.Tensor, point: torch.Tensor) -> torch.Tensor:
     inner = lorentz_inner(base, point)
     alpha = torch.clamp(-inner, min=1.0 + EPS)
     omega = torch.arccosh(alpha)
@@ -166,7 +166,7 @@ class LorentzSGD(torch.optim.Optimizer):
         updated[..., :1] = -updated[..., :1]
         return updated
 
-    def step(self, closure: Optional[Callable[[], torch.Tensor]] = None) -> Optional[float]:
+    def step(self, closure: Optional[Callable[[], torch.Tensor]] = None) -> None:
         loss = None
         if closure is not None:
             with torch.enable_grad():
@@ -184,9 +184,7 @@ class LorentzSGD(torch.optim.Optimizer):
                     update = -lr * projected
                     next_point = expmap(param.data, update)
                     param.data.copy_(next_point)
-        if loss is None:
-            return None
-        return float(loss.detach().item())
+        return None
 
 
 class AccountEncoder(nn.Module):
@@ -347,7 +345,7 @@ class AccountEncoder(nn.Module):
             return tensor[..., 1:]
         if mode == "tangent":
             base = self.origin_vec.unsqueeze(0).expand_as(tensor)
-            return lorentz_logmap(base, tensor)
+            return lorentz_log_map(base, tensor)
         raise ValueError(f"unsupported representation {mode}")
 
     def forward(self, indices: Union[torch.Tensor, Sequence[int], int, Hashable, Sequence[Hashable]], representation: Optional[str] = None) -> torch.Tensor:
@@ -467,7 +465,7 @@ class AccountEncoder(nn.Module):
         generator = torch.Generator(device=self.weight.device)
         if seed is not None:
             generator.manual_seed(seed)
-        axis = -lorentz_logmap(parent, self.origin_vec.unsqueeze(0))
+        axis = -lorentz_log_map(parent, self.origin_vec.unsqueeze(0))
         axis_norm = lorentz_norm(axis)
         if axis_norm.item() < EPS:
             axis = sample_tangent_directions(parent, 1, generator=generator)
