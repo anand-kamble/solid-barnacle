@@ -69,8 +69,8 @@ class TextEncoder(nn.Module):
     def forward(
         self,
         descriptions: Union[str, List[str]],
-        return_cache_stats: bool = False,
-    ) -> Union[torch.Tensor, tuple[torch.Tensor, dict]]:
+        return_cache_stats: bool = True,
+    ) -> tuple[torch.Tensor, dict]:
         if isinstance(descriptions, str):
             descriptions = [descriptions]
         
@@ -133,7 +133,7 @@ class TextEncoder(nn.Module):
             }
             return output, stats
         
-        return output
+        return output, {}
     
     def encode(
         self,
