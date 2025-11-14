@@ -1,0 +1,61 @@
+# Model Architecture Configuration
+
+model:
+  name: "JournalEntryPredictor"
+  
+  # Text Encoder (Transformer)
+  text_encoder:
+    d_model: 512              # Transformer hidden dimension
+    nhead: 8                  # Number of attention heads
+    num_layers: 6             # Number of transformer layers
+    dim_feedforward: 2048     # FFN dimension
+    dropout: 0.1              # Dropout rate
+    activation: "gelu"        # Activation function
+    max_seq_length: 256       # Maximum input sequence length
+    vocab_size: 30000         # Vocabulary size (adjust based on tokenization)
+  
+  # Hierarchical Encoder (for account codes)
+  hierarchical_encoder:
+    embedding_dim: 128        # Account code embedding dimension
+    num_accounts: 1000        # Total number of unique accounts (adjust from data)
+    hierarchy_levels: 4       # Number of hierarchy levels (type, sub_type, sub_sub_type, etc.)
+    use_gnn: false            # Use GNN (true) or simple embeddings (false)
+    gnn_layers: 3             # Number of GNN layers if use_gnn=true
+    gnn_hidden_dim: 256       # GNN hidden dimension
+    dropout: 0.1
+  
+  # Cross-Attention Fusion
+  cross_attention:
+    num_layers: 4             # Number of cross-attention layers
+    d_model: 512              # Dimension (should match text_encoder.d_model)
+    nhead: 8                  # Number of attention heads
+    dropout: 0.1
+    bidirectional: true       # Bidirectional cross-attention (text->hier and hier->text)
+  
+  # Set Prediction Decoder (DETR-style)
+  set_decoder:
+    num_queries: 20           # Maximum number of entry lines per journal entry
+    d_model: 512              # Decoder dimension
+    nhead: 8                  # Number of attention heads
+    num_layers: 6             # Number of decoder layers
+    dim_feedforward: 2048     # FFN dimension
+    dropout: 0.1
+    
+  # Output Heads
+  output_heads:
+    num_account_classes: 1000 # Number of account codes (+ 1 for "no entry")
+    predict_amounts: true     # Predict debit/credit amounts
+    predict_description: false # Predict entry line descriptions
+    
+  # Confidence Calibration
+  calibration:
+    use_temperature_scaling: true
+    initial_temperature: 1.0
+    
+# Model Initialization
+initialization:
+  text_encoder_pretrained: null  # Path to pretrained weights (null for random init)
+  hierarchical_encoder_pretrained: null
+  xavier_uniform: true           # Use Xavier uniform initialization
+  seed: 42
+
